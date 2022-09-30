@@ -1,0 +1,28 @@
+{
+    "id": "15116E5A",
+    "path": null,
+    "project_path": null,
+    "type": "object_explorer",
+    "hash": "0",
+    "contents": "",
+    "dirty": false,
+    "created": 1664566959579.0,
+    "source_on_save": false,
+    "relative_order": 10,
+    "properties": {
+        "id": "5e470efc0012433f9b6a219f85356bcb",
+        "name": "infvalue",
+        "title": "infvalue",
+        "language": "R",
+        "source_window_id": "",
+        "Source": "Source"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1782973264312,
+    "encoding": "",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1664566959579,
+    "read_only": false,
+    "read_only_alternatives": []
+}
