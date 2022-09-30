@@ -5,7 +5,7 @@ library(magrittr)
 library(stringr)
 library(ggplot2)
 
-bank_stmt <- sample_statement
+bank_stmt <- Statement_adj
 
 colnames(bank_stmt) <- c("transaction_date", "type", "description", "pmt_number", "bank_reference", "amount")
 
@@ -24,9 +24,10 @@ is_keyword_in('milapicalulu','ganbei')
 bank_stmt %<>%
   mutate(
     amount = abs(amount),
-    transaction_date = ymd(transaction_date),
+    transaction_date = dmy(transaction_date),
     transaction_week = week(transaction_date),
     transaction_month = month(transaction_date, label = T),
+    transaction_yearmonth = floor_date(transaction_date,unit = 'month'),
     description_f = str_replace_all(tolower(gsub('[[:punct:]]|[[:digit:]]', '', description)), pattern=" ", repl=""),
     category = case_when(
       type %in% c('SKAIDRAS NAUDAS IZÒEMÐANA',
@@ -36,7 +37,7 @@ bank_stmt %<>%
                   'IENÂKOÐAIS EKS MAKSÂJUMS',
                   'IEN\\\xc2KO\\\xd0AIS MAKS\\\xc2JUMS',
                   'IEN\\\xc2KO\\\xd0AIS ZIBMAKS\\\xc2JUMS') ~ 'Incoming',
-      type %in% c('DEBETA PROCENTI', 'MAKSA PAR SK.NAUDAS IZÒEMÐANU') ~ 'Commisions',
+      type %in% c('DEBETA PROCENTI', 'MAKSA PAR SK.NAUDAS IZÒEMÐANU', 'ÂTRÂ MAKSÂJUMA KOMISIJA') ~ 'Commisions',
       sapply(description_f,function(x) is_keyword_in(x,'wolt')) > 0 ~ 'Wolt',
       sapply(description_f,function(x) is_keyword_in(x,'bolt')) > 0 ~ 'Bolt',
       sapply(description_f,function(x) is_keyword_in(x,'wwwalv')) > 0 ~ 'Online shopping',
@@ -96,7 +97,41 @@ bank_stmt %<>%
       sapply(description_f,function(x) is_keyword_in(x,'kafejnicasala')) > 0 ~ 'Lunch at work',
       sapply(description_f,function(x) is_keyword_in(x,'hsreplaynet')) > 0 ~ 'Subscriptions',
       sapply(description_f,function(x) is_keyword_in(x,'yandex')) > 0 ~ 'Yandex',
-      
+      sapply(description_f,function(x) is_keyword_in(x,'labaspreces')) > 0 ~ 'LabasPreces',
+      sapply(description_f,function(x) is_keyword_in(x,'peterclarke')) > 0 ~ 'Poker',
+      sapply(description_f,function(x) is_keyword_in(x,'manslmt')) > 0 ~ 'PhoneBill',
+      sapply(description_f,function(x) is_keyword_in(x,'indexo')) > 0 ~ 'Pension',
+      sapply(description_f,function(x) is_keyword_in(x,'lakstos')) > 0 ~ 'Flowers',
+      sapply(description_f,function(x) is_keyword_in(x,'frizetava')) > 0 ~ 'Hairdresser',
+      sapply(description_f,function(x) is_keyword_in(x,'mango')) > 0 ~ 'Mango',
+      sapply(description_f,function(x) is_keyword_in(x,'zimolaveikals')) > 0 ~ 'Gifts',
+      sapply(description_f,function(x) is_keyword_in(x,'amoralle')) > 0 ~ 'Amoralle',
+      sapply(description_f,function(x) is_keyword_in(x,'icard')) > 0 ~ 'Poker',
+      sapply(description_f,function(x) is_keyword_in(x,'upswingpoker')) > 0 ~ 'Poker',
+      sapply(description_f,function(x) is_keyword_in(x,'cardrunnersev')) > 0 ~ 'Poker',
+      sapply(description_f,function(x) is_keyword_in(x,'gmtbeauty')) > 0 ~ 'Gifts',
+      sapply(description_f,function(x) is_keyword_in(x,'sexystyle')) > 0 ~ 'Sexystyle',
+      sapply(description_f,function(x) is_keyword_in(x,'zaraveikals')) > 0 ~ 'Zara',
+      sapply(description_f,function(x) is_keyword_in(x,'vinastudija')) > 0 ~ 'Gifts',
+      sapply(description_f,function(x) is_keyword_in(x,'lashandbrow')) > 0 ~ 'Beauty',
+      sapply(description_f,function(x) is_keyword_in(x,'pokercoaching')) > 0 ~ 'Poker',
+      sapply(description_f,function(x) is_keyword_in(x,'elgarsozolins')) > 0 ~ 'Rent',
+      sapply(description_f,function(x) is_keyword_in(x,'accessorize')) > 0 ~ 'Accessorize',
+      sapply(description_f,function(x) is_keyword_in(x,'mango')) > 0 ~ 'Mango',
+      sapply(description_f,function(x) is_keyword_in(x,'douglas')) > 0 ~ 'Douglas',
+      sapply(description_f,function(x) is_keyword_in(x,'bilesuserviss')) > 0 ~ 'Bilesuserviss',
+      sapply(description_f,function(x) is_keyword_in(x,'ledusskola')) > 0 ~ 'LedusSkola',
+      sapply(description_f,function(x) is_keyword_in(x,'psxlv')) > 0 ~ 'Gifts',
+      sapply(description_f,function(x) is_keyword_in(x,'aseimriga')) > 0 ~ 'Apavi40plus',
+      sapply(description_f,function(x) is_keyword_in(x,'ilgvarslaganovskis')) > 0 ~ 'Transfers',
+      sapply(description_f,function(x) is_keyword_in(x,'galleriarigahm')) > 0 ~ 'H&M',
+      sapply(description_f,function(x) is_keyword_in(x,'foodfactory')) > 0 ~ 'FoodFactory',
+      sapply(description_f,function(x) is_keyword_in(x,'einarsbirkhans')) > 0 ~ 'DrivingLessons',
+      sapply(description_f,function(x) is_keyword_in(x,'akropole')) > 0 ~ 'Akropole',
+      sapply(description_f,function(x) is_keyword_in(x,'domina')) > 0 ~ 'Domina',
+      sapply(description_f,function(x) is_keyword_in(x,'valtersunrapa')) > 0 ~ 'Books',
+      sapply(description_f,function(x) is_keyword_in(x,'janisroze')) > 0 ~ 'Books',
+      sapply(description_f,function(x) is_keyword_in(x,'crushlive')) > 0 ~ 'Poker',
       
       T ~ 'Other'
     ),
@@ -105,16 +140,28 @@ bank_stmt %<>%
     category_main = case_when(category %in% c('Rimi','Maxima','Ogas', 'Drogas','Flowers') ~ 'Groceries',
                               category %in% c('Restart','Terra') ~ 'Lunch at work',
                               category %in% c('Circle K','Narvesen','Cadets') ~ 'Convenience shops',
-                              category %in% c('Wolt','Lulu') ~ 'Food delivery',
+                              category %in% c('Wolt','Lulu','FoodFactory') ~ 'Food delivery',
                               category %in% c('Makonis', 'Gimlet','Herbarijs') ~ 'Bars',
                               category %in% c('Adobe','Factile','Apple','PeopleFitness','Steezystudio','Amazon','Audible') ~ 'Subscriptions',
                               category %in% c('Elkor','Stockman','Peek and Cloppenburg', 'Amoralle','Online shopping',
                                               'Ikea',
                                               'Games',
                                               'Asos',
-                                              "H&M"
+                                              "H&M",
+                                              'Mango',
+                                              'Sexystyle',
+                                              'Zara',
+                                              'Douglas',
+                                              'Accessorize',
+                                              'Apavi40plus',
+                                              'Akropole',
+                                              'Domina'
                                               ) ~ 'Shopping',
                               category %in% c('Bolt', 'Yandex') ~ 'Taxi',
+                              category %in% c('LabasPreces') ~ 'Home',
+                              category %in% c('Bilesuserviss','Booking') ~ 'Culture&Relax',
+                              category %in% c('Hairdresser') ~ 'Beauty',
+                              category %in% c('LedusSkola','DrivingLessons','Books') ~ 'Self-Development',
                               
                               T ~ category)
     ) 
@@ -123,6 +170,7 @@ bank_stmt %<>%
 
 table(bank_stmt$category)/nrow(bank_stmt)
 
+
 # In the process of keyword searching, you want to refine categories so that "Other" contains less 
 
-bank_stmt %>% filter(category == 'Other') %>% arrange(desc(amount)) %>% select(description_f,description, type, amount) %>% as_tibble() # %>%  View()
+bank_stmt %>% filter(category == 'Other') %>% arrange(desc(amount)) %>% select(description_f,description, type, amount) %>% as_tibble() %>%  View()
