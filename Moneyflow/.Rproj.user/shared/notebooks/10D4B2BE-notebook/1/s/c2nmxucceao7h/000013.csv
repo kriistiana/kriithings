@@ -1,4 +1,0 @@
-"0","train_pca <- prcomp(train_dat %>% select(adjusted_set_variables), center = T, scale. = T, na.action(""na.omit""))
-"
-"2","Error in svd(x, nu = 0, nv = k) : infinite or missing values in 'x'
-"

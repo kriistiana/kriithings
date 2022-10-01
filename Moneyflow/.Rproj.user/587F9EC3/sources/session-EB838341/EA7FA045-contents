@@ -1,0 +1,496 @@
+---
+title: "R Notebook"
+output:
+  html_document:
+    df_print: paged
+  html_notebook: default
+  pdf_document: default
+---
+
+## PD model Moneyflow
+
+The plan of the analysis:
+
+1.  Environment setup, familiarizing myself with data
+2.  Data cleaning and exploration - missing values, vaiable types, distributions
+3.  Exploring relationships of variables with the default rate
+4.  Setup an XGBoost model, find hyperparameters, check number of variables in the model
+5.  Fit final model, explore results
+
+### Setup and first look at data
+
+```{r, include = FALSE}
+library(readxl) # excel import
+library(pillar) # glimpse
+library(ggplot2) # visualizations
+library(dplyr) # data wrangling
+library(lubridate) # dates
+library(rlang) # debugging
+library(Hmisc) # multi- histogram
+library(Information) # Information value
+library(xgboost) # XGB modelling
+library(superml) # grid search
+library(Metrics) # auc
+
+invoices <- read_excel("Moneyflow DS interview Case.xlsx", 
+                       sheet = "Train")
+
+```
+
+First glance at data
+
+```{r}
+dim(invoices)
+glimpse(invoices)
+```
+
+There are 21 features of which invoice_id won't be used for feature generation. That leaves 20 features to explore, including default. 7 inputs relating to seller, 7 related to payer and 5 to the transaction.
+
+### Cleaning and exploration
+
+```{r}
+table(invoices$defaulted, useNA = 'ifany')
+table(invoices$seller_is_public, useNA = 'ifany')
+table(invoices$seller_is_public, invoices$defaulted, useNA = 'ifany') # remove
+table(invoices$seller_danish_pep, useNA = 'ifany')
+
+table(invoices$payer_is_public, useNA = 'ifany')
+table(invoices$payer_danish_pep, useNA = 'ifany')
+table(invoices$payer_eu_sanctions, useNA = 'ifany') # remove
+
+table(invoices$offer_seller_is_first_invoice, useNA = 'ifany')
+
+nrow(table(invoices$seller_main_industry_code))
+nrow(table(invoices$seller_company_type))
+nrow(table(invoices$payer_main_industry_code))
+nrow(table(invoices$payer_company_type))
+table(invoices$seller_company_type)
+
+qplot(invoices$invoice_amount)
+qplot(invoices$invoice_amount[invoices$invoice_amount<100000])
+qplot(invoices$seller_age)
+qplot(invoices$payerr_age)
+qplot(invoices$seller_risika_score)
+
+qplot(invoices$inv_iss2due)
+qplot(invoices$inv_iss2purch)
+```
+
+Takeaways:
+
+-   Target is binomial, no missing values.
+
+-   seller_is_public only has 12 values that are all missing.
+
+-   Turn T/F variables into numeric.
+
+-   Turn payer age, seller age, invoice amount, seller risika score, payer risika score to numeric
+
+-   Find hypothetical date by subtracting invoice_issue_date from current date
+
+-   Add relative sizes of seller and payer industry size and company type
+
+-   Time related variables inv_iss2due and inv_iss2purch have nagative values
+
+```{r}
+seller_industry_size <- invoices %>% 
+  group_by(seller_main_industry_code) %>% 
+  summarise(seller_ind_size = n()/nrow(invoices)) %>% 
+  select(seller_main_industry_code, seller_ind_size)
+
+seller_company_size <- invoices %>% 
+  group_by(seller_company_type) %>% 
+  summarise(seller_comp_size = n()/nrow(invoices)) %>% 
+  select(seller_company_type, seller_comp_size)
+
+payer_industry_size <- invoices %>% 
+  group_by(payer_main_industry_code) %>% 
+  summarise(payer_ind_size = n()/nrow(invoices)) %>% 
+  select(payer_main_industry_code, payer_ind_size)
+
+payer_company_size <- invoices %>% 
+  group_by(payer_company_type) %>% 
+  summarise(payer_comp_size = n()/nrow(invoices)) %>% 
+  select(payer_company_type, payer_comp_size)
+
+colnames(invoices)
+invoices_clean <- invoices %>% 
+  select(- invoice_id,
+         - seller_is_public, #since there are only 12 observations which are all missing
+         - payer_eu_sanctions) %>% 
+  mutate(
+    response = case_when(defaulted == 'y' ~ 1, T ~ 0),
+    seller_danish_pep_num = as.numeric(seller_danish_pep),
+    payer_is_public_num = case_when(payer_is_public == "FALSE" ~ 0,
+                                    payer_is_public == "TRUE" ~ 1,
+                                    T ~ NA_real_),
+    payer_danish_pep_num = as.numeric(payer_danish_pep),
+    
+    payer_risika_score_num = suppressWarnings(as.numeric(payer_risika_score)),
+    
+    offer_seller_is_first_invoice_num = case_when(offer_seller_is_first_invoice == "FALSE" ~ 0,
+                                    offer_seller_is_first_invoice == "TRUE" ~ 1,
+                                    T ~ NA_real_),
+    payer_age_num = suppressWarnings(case_when(as.numeric(payerr_age) == 2021 ~ 1,
+                                               T ~ as.numeric(payerr_age))), # assuming 2021 is an error
+    seller_age_num = as.numeric(seller_age),
+    invoice_issue_date = today() - days(inv_due2today),
+    invoice_issue_yearmonth = paste0(year(invoice_issue_date),
+                                     case_when(
+                                       nchar(month(invoice_issue_date)) == 1 ~ paste0('0',month(invoice_issue_date)), 
+                                       T ~ as.character(month(invoice_issue_date)))),
+    seller_payer_company_type_match = case_when(seller_company_type == payer_company_type ~ 1, T ~ 0),
+    seller_payer_industry_type_match = case_when(seller_main_industry_code == payer_main_industry_code ~ 1, T ~ 0)) %>%
+  
+  left_join(seller_industry_size, by = 'seller_main_industry_code') %>% 
+  left_join(seller_company_size, by = 'seller_company_type') %>% 
+  left_join(payer_industry_size, by = 'payer_main_industry_code') %>% 
+  left_join(payer_company_size, by = 'payer_company_type') %>% 
+  
+  mutate(payer_comp_type_f = case_when(payer_comp_size >0.50 ~'Large',
+                                            payer_comp_size > 0.1 ~ 'Medium',
+                                            T ~ 'Small'),
+         seller_comp_type_f = case_when(seller_comp_size >0.50 ~'Large',
+                                       seller_comp_size > 0.1 ~ 'Medium',
+                                           T ~ 'Small'),
+         payer_industry_size_f = case_when(payer_ind_size >0.1 ~'Large',
+                                           payer_ind_size > 0.01 ~ 'Medium',
+                                           T ~ 'Small'),
+         seller_industry_size_f = case_when(seller_ind_size >0.07 ~'Large',
+                                       seller_ind_size > 0.01 ~ 'Medium',
+                                       T ~ 'Small'),
+         )
+
+
+```
+
+#### Stability in time 
+
+Assuming that today() - (inv_due2today) gives us an estimate of invoice issue date, I will check whether badrate and distribution are stable in time.
+
+```{r}
+invoices_clean %>% 
+  group_by(invoice_issue_yearmonth) %>% 
+  summarise(nn = n(),
+            br = mean(response))
+```
+
+It looks like there is a suspicious month (tentatively) 2021-09. Since I don't have sufficient business knowledge it's hard to interpret if this is cause for concern, but would be interesting to explore in more detail
+
+#### Distributions of cleaned inputs
+
+```{r}
+hist.data.frame(invoices_clean %>% select_if(is.numeric), n.unique =  2)
+```
+
+We can see that distributions are right-skewed for some variables like invoice_amount, offer_cost_percent, seller_age, payer_age. XGBoost is robust to outliers, so no transformations will be made to data because of the distribution.
+
+### Relationship between variables and response
+
+#### Information Value
+
+I will be using Information Value IV) to evaluate how each variable relates to response. Features with very low (sub and close to 0.05) IV will be excluded from the model.
+
+create_infotables output consists of two parts - Tables and Summary. Tables provides detailed IV and WOE evaluation for each variable, while Summary gives an overview for each feature.
+
+```{r}
+infvalue <- create_infotables(data=invoices_clean, y="response", bins=10, parallel=FALSE)
+
+infvalue$Summary
+```
+
+-   Categorical variables with many levels will have artificially high IV values, so I can exclude them (payer_main_industry_code, seller_main_industry_code).
+
+-   Payer age has a suspiciously high IV value. Checking this variable in detail reveals that WOE isn't very linear - there are specific bins that are very predictive (like age [17,22] signifies a very high default risk as opposed to [13,16] which is very low default risk). I suspect this is due to the imbalanced nature of the dataset and will treat this feature with suspicion.
+
+```{r}
+infvalue$Tables$payer_age_num
+```
+
+-   Similar trend as with payer age can be seen for payer_ind_size and seller_ind_size. Seems that IV has picked up some very specific classes and there isn't much reason to believe that sizes 0.02 are much worse than sizes 0.01. Thus same caution applies here
+
+```{r}
+infvalue$Tables$payer_ind_size
+infvalue$Tables$seller_ind_size
+```
+
+-   Another suspiciously high IV for offer_cost_percent. This could be because offer is made after evaluating credit risk of the invoice, thus providing some sort of target leak. Without knowing the business specifics however, it is hard to know at this point. It could also be that invoice price is agreed on in the contract with the business and doesn't change from invoice to invoice.
+
+-   Some variables that will be discarded at this step:
+
+    -   offer_seller_is_first_invoice_num
+
+    -   inv_iss2purch
+
+    -   payer_danish_pep_num
+
+    -   seller_payer_company_type_match
+
+#### Correlations
+
+Check correlations between variables, to help in later steps when selecting features for the model.
+
+```{r}
+cormatrix <- cor(invoices_clean %>% select_if(is.numeric), use = 'pairwise.complete.obs')
+
+round(cormatrix,2)
+```
+
+### Grid search
+
+#### Parameter tuning
+
+For this prediction task I will use XGBoost model - it is fast to fit, in my experience works well with binomial prediction problems, handles missing values well and is robust to outliers. Downside is that all features have to be numeric.
+
+At this point I will split data into train and test data, tune hyperparameters of the model on train data using 3-fold CV and fit final model.
+
+```{r}
+
+initial_set_variables <- c(
+  'payer_age_num',
+  'payer_ind_size',
+  'seller_ind_size',
+  'offer_cost_percent',
+  'payer_risika_score_num',
+  'seller_age_num',
+  'invoice_amount',
+  'inv_due2today',
+  'inv_iss2due',
+  'seller_risika_score',
+  'seller_danish_pep_num',
+  'seller_comp_size',
+  'payer_comp_size',
+  
+  'response'
+)
+
+set.seed(101) # Set Seed so that same sample can be reproduced in future also
+# Now Selecting 75% of data as sample from total 'n' rows of the data  
+sample <- sample.int(n = nrow(invoices_clean), size = floor(.75*nrow(invoices_clean)), replace = F)
+train_dat <- invoices_clean[sample, initial_set_variables]
+test_dat  <- invoices_clean[-sample,initial_set_variables ]
+
+mean(train_dat$response)
+mean(test_dat$response)
+
+xg <- XGBTrainer$new(early_stopping = 50,
+                     objective = 'binary:logistic')
+xgb_model_1 <- GridSearchCV$new(trainer = xg,
+                                parameters = list(n_estimators = c(1500),
+                                                  learning_rate = c(0.01, 0.1),
+                                                  max_depth = c(5,2,10),
+                                                  min_child_weight = c(5,10)),
+                                n_folds = 3,
+                                scoring = c('auc'))
+
+
+xgb_model_1$fit(train_dat , "response")
+xgb_model_1$evaluation_scores
+```
+
+Looks like learning rate 0.01 is optimal, while max_depth and min_child_weight have very similar results irregardless of the value. I will take the parameters from the highest avg_test_AUC run-
+
+-   learning rate 0.01
+
+-   min_child_weight 10
+
+-   max_depth 5
+
+Now that I have an idea about optimal parameters, I will perform another CV to see the optimal number of trees to build (nrounds parameter for xgboost). I will check at which nrounds test AUC begins to deteriorate
+
+```{r}
+set.seed(555)
+initial_model.cv <- xgb.cv(data = xgb.DMatrix(train_dat %>%
+                                                select(-response) %>% 
+                                                as.matrix(), 
+                                              label = train_dat$response),
+                         params = list(
+                           eta = 0.01,
+                           max_depth = 5,
+                           min_child_weight = 10,
+                           objective = "binary:logistic",
+                           eval_metric = "auc"),
+                         nfold = 3,
+                         nrounds = 5000)
+
+ggplot(initial_model.cv$evaluation_log,aes(x=iter)) + 
+  geom_point(aes(y=test_auc_mean), color = "green") +
+  geom_point(aes(y=train_auc_mean), color = "red")
+
+initial_model.cv$evaluation_log %>% arrange(desc(test_auc_mean)) %>% head(10)
+
+
+```
+
+Looks like highest test auc values were reached at around 3600 nrounds, so that will be the parameter used going forward. Also, I can gauge that AUC value that I am aiming for will be around 94-95%.
+
+#### Initial model
+
+I will fit the first model and check feature importance to see if there are more redundant features to remove.
+
+```{r}
+set.seed(555)
+initial_model <- xgboost(data = xgb.DMatrix(train_dat %>%
+                                              dplyr::select(- response,
+                                                            - inv_due2today) %>%
+                                              select_if(is.numeric) %>% 
+                                              as.matrix(), 
+                                            label = train_dat$response),
+                         params = list(
+                                    eta = 0.01,
+                                    max_depth = 10,
+                                    min_child_weight = 10,
+                                    objective = "binary:logistic",
+                                    eval_metric = "auc"),
+                         
+                         nrounds = 3600)
+
+xgb.importance(model=initial_model)  
+```
+
+Looks like some redundant features can be excluded:
+
+-   seller_danish_pep_num
+
+-   payer_comp_size
+
+-   seller_comp_size
+
+I will exclude them and check hyperparameters again, and fit the final model.
+
+### Final model
+
+```{r}
+adjusted_set_variables <- c(
+  'payer_age_num',
+  'payer_ind_size',
+  'seller_ind_size',
+  'offer_cost_percent',
+  'payer_risika_score_num',
+  'seller_age_num',
+  'invoice_amount',
+  'inv_due2today',
+  'inv_iss2due',
+  # 'seller_danish_pep_num',
+  # 'seller_comp_size',
+  # 'payer_comp_size',
+  'seller_risika_score',
+  
+  'response'
+)
+
+xg2<- XGBTrainer$new(early_stopping = 50,
+                     objective = 'binary:logistic')
+
+xgb_model_2 <- GridSearchCV$new(trainer = xg2,
+                                parameters = list(n_estimators = c(3000),
+                                                  learning_rate = c(0.01, 0.1),
+                                                  max_depth = c(5,2,10),
+                                                  min_child_weight = c(5,10)),
+                                n_folds = 3,
+                                scoring = c('auc'))
+
+
+xgb_model_2$fit(train_dat %>% select(adjusted_set_variables), "response")
+xgb_model_2$evaluation_scores
+
+tuned_model.cv <- xgb.cv(data = xgb.DMatrix(train_dat %>%
+                                                select(all_of(adjusted_set_variables),
+                                                       -response) %>% 
+                                                as.matrix(), 
+                                              label = train_dat$response),
+                         params = list(
+                           eta = 0.01,
+                           max_depth = 5,
+                           min_child_weight = 5,
+                           objective = "binary:logistic",
+                           eval_metric = "auc"),
+                         nfold = 3,
+                         nrounds = 5000)
+
+ggplot(tuned_model.cv$evaluation_log,aes(x=iter)) + 
+  geom_point(aes(y=test_auc_mean), color = "green") +
+  geom_point(aes(y=train_auc_mean), color = "red")
+
+tuned_model.cv$evaluation_log %>% arrange(desc(test_auc_mean)) %>% head(10)
+
+tuned_model <- xgboost(data = xgb.DMatrix(train_dat %>%
+                                              dplyr::select(all_of(adjusted_set_variables),
+                                                            - response) %>%
+                                              select_if(is.numeric) %>% 
+                                              as.matrix(), 
+                                            label = train_dat$response),
+                         params = list(
+                                    eta = 0.01,
+                                    max_depth = 5,
+                                    min_child_weight = 5,
+                                    objective = "binary:logistic",
+                                    eval_metric = "auc"),
+                         
+                         nrounds = 1510)
+
+xgb.importance(model=tuned_model) 
+```
+
+### 
+
+### Final model analysis
+
+```{r}
+test_dat$predicted <- predict(tuned_model,
+                              xgb.DMatrix(test_dat %>%
+                                              dplyr::select(all_of(adjusted_set_variables),
+                                                            - response) %>%
+                                              select_if(is.numeric) %>% 
+                                              as.matrix()),
+                              type = 'response')
+
+Metrics::auc(test_dat$response, test_dat$predicted)
+qplot(test_dat$predicted)
+
+```
+
+AUC on the test data is 0.9618.
+
+It looks like there are some very high default rate invoices identified, however most of the predictions are centered around 1%.
+
+```{r}
+res <- test_dat %>% 
+  group_by(prec_groups = cut(predicted, breaks = seq(0,1,0.1))) %>% 
+  summarise(nn = n(),
+            br = mean(response),
+            distr = nn/nrow(.))
+
+
+
+```
+
+```{r}
+gridExtra::grid.arrange(res %>% 
+                          ggplot(aes(prec_groups,br)) + 
+                          geom_point() + 
+                          xlab("Badrate") +
+                          geom_label(aes(y = br + 0.05,label = round(br,3))) +
+                          scale_x_discrete("Badrate"),
+                        
+                        res %>%  
+                          ggplot(aes(prec_groups,distr)) + 
+                          geom_bar(stat = "identity") + 
+                          xlab("Distribution") +
+                          geom_label(aes(y = distr + 0.1,label = round(distr,3))) +
+                          scale_x_discrete("Distribution"))
+```
+
+I have been able to identify some very high risk invoices. Depending on business strategy I would guess that invoices with PD \> 0.5 aren't worth buying, invoices with PD 0.1-0.5 could be bought at a corresponding price and 0-0.1 can be worked with.
+
+Further areas of exploration:
+
+-   Get to know business processes to figure out if invoice price can reasonably by be used as an input feature
+
+-   Check what happened in tentative "2021-09"
+
+-   Fix is_first_invoice_seller variable
+
+-   check what is wrong with payer risika score 10
+
+-   explore inv_issue2purch negative values
