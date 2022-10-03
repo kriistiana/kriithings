@@ -260,6 +260,7 @@ initial_set_variables <- c(
   'seller_danish_pep_num',
   'seller_comp_size',
   'payer_comp_size',
+  'invoice_issue_yearmonth',
   
   'response'
 )
@@ -583,12 +584,148 @@ gridExtra::grid.arrange(res_clean %>%
 
 ```{r}
 hist.data.frame(invoices_test_clean %>% select_if(is.numeric), n.unique =  2)
+
+invoices_test_clean %>% 
+  group_by(invoice_issue_yearmonth) %>% 
+  summarise(nn = n(),
+            br = mean(response))
+
+
+table(invoices_test_clean$offer_seller_is_first_invoice, useNA = 'ifany')
+
+qplot(invoices$invoice_amount)
+qplot(invoices_test_clean$invoice_amount)
+
+qplot(invoices$offer_cost_percent)
+qplot(invoices_test_clean$offer_cost_percent)
 ```
 
 ```{r}
 infvaluetest <- create_infotables(data=invoices_test_clean, y="response", bins=10, parallel=FALSE)
 
 infvaluetest$Summary
+```
+
+```{r}
+adjusted_set_variables_2 <- c(
+  'payer_age_num',
+  'payer_ind_size',
+  'seller_ind_size',
+  'offer_cost_percent',
+  'payer_risika_score_num',
+  'seller_age_num',
+  'invoice_amount',
+  'inv_due2today',
+  'inv_iss2due',
+  # 'seller_danish_pep_num',
+  # 'seller_comp_size',
+  # 'payer_comp_size',
+  'seller_risika_score',
+  
+  'response'
+)
+
+
+
+xg2<- XGBTrainer$new(early_stopping = 50,
+                     objective = 'binary:logistic')
+
+xgb_model_2 <- GridSearchCV$new(trainer = xg2,
+                                parameters = list(n_estimators = c(3000),
+                                                  learning_rate = c(0.01, 0.1,0.5),
+                                                  max_depth = c(5,2,10),
+                                                  min_child_weight = c(5,10)),
+                                n_folds = 3,
+                                scoring = c('auc'))
+
+
+xgb_model_2$fit(train_dat %>%
+                  filter(invoice_issue_yearmonth != 202109) %>% 
+                  select(adjusted_set_variables_2), "response")
+
+xgb_model_2$evaluation_scores
+
+```
+
+```{r}
+set.seed(555)
+train_label <- train_dat[train_dat$invoice_issue_yearmonth != 202109,"response"]
+
+initial_model.cv2 <- xgb.cv(data = xgb.DMatrix(train_dat %>%
+                                                 filter(invoice_issue_yearmonth != 202109) %>% 
+                                                select(all_of(adjusted_set_variables_2), - response) %>% 
+                                                as.matrix(), 
+                                              label = train_label$response),
+                         params = list(
+                           eta = 0.01,
+                           max_depth = 2,
+                           min_child_weight = 10,
+                           objective = "binary:logistic",
+                           eval_metric = "auc"),
+                         nfold = 3,
+                         nrounds = 10000,
+                         verbose = F)
+
+ggplot(initial_model.cv2$evaluation_log,aes(x=iter)) + 
+  geom_point(aes(y=test_auc_mean), color = "green") +
+  geom_point(aes(y=train_auc_mean), color = "red")
+
+initial_model.cv2$evaluation_log %>% arrange(desc(test_auc_mean)) %>% head(10)
+```
+
+```{r}
+tuned_model2 <- xgboost(data = xgb.DMatrix(train_dat %>%
+                                             filter(invoice_issue_yearmonth != 202109) %>% 
+                                              dplyr::select(all_of(adjusted_set_variables_2),
+                                                            - response) %>%
+                                              select_if(is.numeric) %>% 
+                                              as.matrix(), 
+                                            label = train_label$response),
+                         params = list(
+                                    eta = 0.01,
+                                    max_depth = 2,
+                                    min_child_weight = 10,
+                                    objective = "binary:logistic",
+                                    eval_metric = "auc",
+                                    verbose = F),
+                         
+                         nrounds = 8870)
+
+xgb.importance(model=tuned_model2) 
+
+invoices_test_clean$predicted2 <- predict(tuned_model2,
+                              xgb.DMatrix(invoices_test_clean %>%
+                                              dplyr::select(all_of(adjusted_set_variables_2),
+                                                            - response) %>%
+                                              select_if(is.numeric) %>% 
+                                              as.matrix()),
+                              type = 'response')
+
+saveRDS(tuned_model, "final_moneyflow_model.rds")
+write.csv(cbind(invoices_test$invoice_id,invoices_test_clean), "test_predictions.csv", row.names = F)
+
+Metrics::auc(invoices_test_clean$response,
+             invoices_test_clean$predicted2)
+
+res_clean <- invoices_test_clean %>% 
+  group_by(prec_groups = cut(predicted2, breaks = seq(0,1,0.1))) %>% 
+  summarise(nn = n(),
+            br = mean(response),
+            distr = nn/nrow(.))
+
+gridExtra::grid.arrange(res_clean %>% 
+                          ggplot(aes(prec_groups,br)) + 
+                          geom_point() + 
+                          xlab("Badrate") +
+                          geom_label(aes(y = br + 0.05,label = round(br,3))) +
+                          scale_x_discrete("Badrate"),
+                        
+                        res_clean %>%  
+                          ggplot(aes(prec_groups,distr)) + 
+                          geom_bar(stat = "identity") + 
+                          xlab("Distribution") +
+                          geom_label(aes(y = distr + 0.1,label = round(distr,3))) +
+                          scale_x_discrete("Distribution"))
 ```
 
 Further areas of exploration:
