@@ -1,0 +1,8 @@
+"0","res <- test_dat %>% "
+"0","  group_by(prec_groups = cut(predicted, breaks = seq(0,1,0.1))) %>% "
+"0","  summarise(nn = n(),"
+"0","            br = mean(response),"
+"0","            distr = nn/nrow(.))"
+"0",""
+"0",""
+"0",""
