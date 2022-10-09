@@ -159,7 +159,8 @@ invoices_clean <- invoices %>%
          seller_industry_size_f = case_when(seller_ind_size >0.07 ~'Large',
                                        seller_ind_size > 0.01 ~ 'Medium',
                                        T ~ 'Small'),
-         )
+         ) %>% 
+filter(inv_due2today <= 360)
 
 
 ```
@@ -390,7 +391,7 @@ xg2<- XGBTrainer$new(early_stopping = 50,
                      objective = 'binary:logistic')
 
 xgb_model_2 <- GridSearchCV$new(trainer = xg2,
-                                parameters = list(n_estimators = c(3000),
+                                parameters = list(n_estimators = c(5000),
                                                   learning_rate = c(0.01, 0.1),
                                                   max_depth = c(5,2,10),
                                                   min_child_weight = c(5,10)),
@@ -412,12 +413,12 @@ tuned_model.cv <- xgb.cv(data = xgb.DMatrix(train_dat %>%
                                               label = train_dat$response),
                          params = list(
                            eta = 0.01,
-                           max_depth = 5,
-                           min_child_weight = 5,
+                           max_depth = 2,
+                           min_child_weight = 10,
                            objective = "binary:logistic",
                            eval_metric = "auc"),
                          nfold = 3,
-                         nrounds = 5000,
+                         nrounds = 10000,
                          verbose = F)
 
 ggplot(tuned_model.cv$evaluation_log,aes(x=iter)) + 
@@ -434,13 +435,13 @@ tuned_model <- xgboost(data = xgb.DMatrix(train_dat %>%
                                             label = train_dat$response),
                          params = list(
                                     eta = 0.01,
-                                    max_depth = 5,
-                                    min_child_weight = 5,
+                                    max_depth = 2,
+                                    min_child_weight = 10,
                                     objective = "binary:logistic",
                                     eval_metric = "auc",
                                     verbose = F),
                          
-                         nrounds = 1510)
+                         nrounds = 7120)
 
 xgb.importance(model=tuned_model) 
 ```
@@ -615,7 +616,7 @@ adjusted_set_variables_2 <- c(
   'payer_risika_score_num',
   'seller_age_num',
   'invoice_amount',
-  'inv_due2today',
+  # 'inv_due2today',
   'inv_iss2due',
   # 'seller_danish_pep_num',
   # 'seller_comp_size',
@@ -631,16 +632,15 @@ xg2<- XGBTrainer$new(early_stopping = 50,
                      objective = 'binary:logistic')
 
 xgb_model_2 <- GridSearchCV$new(trainer = xg2,
-                                parameters = list(n_estimators = c(3000),
-                                                  learning_rate = c(0.01, 0.1,0.5),
-                                                  max_depth = c(5,2,10),
-                                                  min_child_weight = c(5,10)),
+                                parameters = list(n_estimators = c(5000),
+                                                  learning_rate = c(0.01),
+                                                  max_depth = c(5,2),
+                                                  min_child_weight = c(5,10,20)),
                                 n_folds = 3,
                                 scoring = c('auc'))
 
 
 xgb_model_2$fit(train_dat %>%
-                  filter(invoice_issue_yearmonth != 202109) %>% 
                   select(adjusted_set_variables_2), "response")
 
 xgb_model_2$evaluation_scores
@@ -649,13 +649,12 @@ xgb_model_2$evaluation_scores
 
 ```{r}
 set.seed(555)
-train_label <- train_dat[train_dat$invoice_issue_yearmonth != 202109,"response"]
+# train_label <- train_dat[train_dat$invoice_issue_yearmonth != 202109,"response"]
 
 initial_model.cv2 <- xgb.cv(data = xgb.DMatrix(train_dat %>%
-                                                 filter(invoice_issue_yearmonth != 202109) %>% 
                                                 select(all_of(adjusted_set_variables_2), - response) %>% 
                                                 as.matrix(), 
-                                              label = train_label$response),
+                                              label = train_dat$response),
                          params = list(
                            eta = 0.01,
                            max_depth = 2,
@@ -674,24 +673,33 @@ initial_model.cv2$evaluation_log %>% arrange(desc(test_auc_mean)) %>% head(10)
 ```
 
 ```{r}
+set.seed(333)
 tuned_model2 <- xgboost(data = xgb.DMatrix(train_dat %>%
-                                             filter(invoice_issue_yearmonth != 202109) %>% 
                                               dplyr::select(all_of(adjusted_set_variables_2),
                                                             - response) %>%
                                               select_if(is.numeric) %>% 
                                               as.matrix(), 
-                                            label = train_label$response),
+                                            label = train_dat$response),
                          params = list(
                                     eta = 0.01,
                                     max_depth = 2,
-                                    min_child_weight = 10,
+                                    min_child_weight = 20,
                                     objective = "binary:logistic",
                                     eval_metric = "auc",
                                     verbose = F),
                          
-                         nrounds = 8870)
+                         nrounds = 6880)
 
 xgb.importance(model=tuned_model2) 
+
+test_dat$predicted2 <- predict(tuned_model2,
+                              xgb.DMatrix(test_dat %>%
+                                              dplyr::select(all_of(adjusted_set_variables_2),
+                                                            - response) %>%
+                                              select_if(is.numeric) %>% 
+                                              as.matrix()),
+                              type = 'response')
+
 
 invoices_test_clean$predicted2 <- predict(tuned_model2,
                               xgb.DMatrix(invoices_test_clean %>%
@@ -702,13 +710,15 @@ invoices_test_clean$predicted2 <- predict(tuned_model2,
                               type = 'response')
 
 saveRDS(tuned_model, "final_moneyflow_model.rds")
+write.csv(test_dat, "test_set_predictions.csv", row.names = F)
 write.csv(cbind(invoices_test$invoice_id,invoices_test_clean), "test_predictions.csv", row.names = F)
+write.csv(cbind(invoices_test$invoice_id,invoices_test_clean), "test_predictions2.csv", row.names = F)
 
 Metrics::auc(invoices_test_clean$response,
              invoices_test_clean$predicted2)
 
 res_clean <- invoices_test_clean %>% 
-  group_by(prec_groups = cut(predicted2, breaks = seq(0,1,0.1))) %>% 
+  group_by(prec_groups = cut(predicted2, breaks = seq(0,0.05,0.01))) %>% 
   summarise(nn = n(),
             br = mean(response),
             distr = nn/nrow(.))

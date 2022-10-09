@@ -1,2 +1,0 @@
-"0",""
-"0","tuned_model.cv$evaluation_log %>% arrange(desc(test_auc_mean)) %>% head(10)"

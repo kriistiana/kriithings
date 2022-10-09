@@ -1,0 +1,5 @@
+"0","```r
+qplot(invoices$seller_risika_score)
+```"
+"1","`stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
+"

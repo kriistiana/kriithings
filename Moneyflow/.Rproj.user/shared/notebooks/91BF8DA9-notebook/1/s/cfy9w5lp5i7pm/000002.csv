@@ -1,0 +1,5 @@
+"0","```r
+cormatrix <- cor(invoices_clean %>% select_if(is.numeric), use = 'pairwise.complete.obs')
+
+round(cormatrix,2)
+```"

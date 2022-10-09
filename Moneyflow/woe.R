@@ -112,6 +112,14 @@ IV(X=factor(invoices_clean$offer_seller_is_first_invoice),
 WOETable(X=factor(invoices_clean$offer_seller_is_first_invoice),
          Y=invoices_clean$response,valueOfGood = 1)%>% mutate(br = GOODS/TOTAL)
 
+# offer_seller_is_first_invoice
+
+IV(X=factor(invoices_clean$payer_age_num),
+   Y=invoices_clean$response,valueOfGood = 1)
+
+WOETable(X=factor(invoices_clean$payer_age_num),
+         Y=invoices_clean$response,valueOfGood = 1)%>% mutate(br = GOODS/TOTAL)
+
 
 
 

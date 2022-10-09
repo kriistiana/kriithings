@@ -1,0 +1,13 @@
+"0","```r
+test_dat$predicted <- predict(tuned_model,
+                              xgb.DMatrix(test_dat %>%
+                                              dplyr::select(all_of(adjusted_set_variables),
+                                                            - response) %>%
+                                              select_if(is.numeric) %>% 
+                                              as.matrix()),
+                              type = 'response')
+
+Metrics::auc(test_dat$response, test_dat$predicted)
+qplot(test_dat$predicted)
+
+```"

@@ -1,0 +1,5 @@
+"0","```r
+infvalue <- create_infotables(data=invoices_clean, y=\"response\", bins=10, parallel=FALSE)
+
+infvalue$Summary
+```"

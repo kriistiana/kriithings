@@ -1,0 +1,20 @@
+"0","```r
+set.seed(555)
+initial_model <- xgboost(data = xgb.DMatrix(train_dat %>%
+                                              dplyr::select(- response,
+                                                            - inv_due2today) %>%
+                                              select_if(is.numeric) %>% 
+                                              as.matrix(), 
+                                            label = train_dat$response),
+                         params = list(
+                                    eta = 0.01,
+                                    max_depth = 10,
+                                    min_child_weight = 10,
+                                    objective = \"binary:logistic\",
+                                    eval_metric = \"auc\"),
+                         
+                         nrounds = 3600,
+                         verbose = F)
+
+xgb.importance(model=initial_model)  
+```"

@@ -1,0 +1,42 @@
+"0","```r
+xgb_model_2$evaluation_scores
+
+tuned_model.cv <- xgb.cv(data = xgb.DMatrix(train_dat %>%
+                                                select(all_of(adjusted_set_variables),
+                                                       -response) %>% 
+                                                as.matrix(), 
+                                              label = train_dat$response),
+                         params = list(
+                           eta = 0.01,
+                           max_depth = 5,
+                           min_child_weight = 5,
+                           objective = \"binary:logistic\",
+                           eval_metric = \"auc\"),
+                         nfold = 3,
+                         nrounds = 5000,
+                         verbose = F)
+
+ggplot(tuned_model.cv$evaluation_log,aes(x=iter)) + 
+  geom_point(aes(y=test_auc_mean), color = \"green\") +
+  geom_point(aes(y=train_auc_mean), color = \"red\")
+
+tuned_model.cv$evaluation_log %>% arrange(desc(test_auc_mean)) %>% head(10)
+
+tuned_model <- xgboost(data = xgb.DMatrix(train_dat %>%
+                                              dplyr::select(all_of(adjusted_set_variables),
+                                                            - response) %>%
+                                              select_if(is.numeric) %>% 
+                                              as.matrix(), 
+                                            label = train_dat$response),
+                         params = list(
+                                    eta = 0.01,
+                                    max_depth = 5,
+                                    min_child_weight = 5,
+                                    objective = \"binary:logistic\",
+                                    eval_metric = \"auc\",
+                                    verbose = F),
+                         
+                         nrounds = 1510)
+
+xgb.importance(model=tuned_model) 
+```"

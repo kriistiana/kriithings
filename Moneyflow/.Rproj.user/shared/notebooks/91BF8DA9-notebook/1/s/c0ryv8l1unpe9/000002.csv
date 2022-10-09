@@ -1,0 +1,15 @@
+"0","```r
+gridExtra::grid.arrange(res %>% 
+                          ggplot(aes(prec_groups,br)) + 
+                          geom_point() + 
+                          xlab(\"Badrate\") +
+                          geom_label(aes(y = br + 0.05,label = round(br,3))) +
+                          scale_x_discrete(\"Badrate\"),
+                        
+                        res %>%  
+                          ggplot(aes(prec_groups,distr)) + 
+                          geom_bar(stat = \"identity\") + 
+                          xlab(\"Distribution\") +
+                          geom_label(aes(y = distr + 0.1,label = round(distr,3))) +
+                          scale_x_discrete(\"Distribution\"))
+```"
