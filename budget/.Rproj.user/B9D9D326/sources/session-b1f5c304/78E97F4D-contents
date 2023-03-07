@@ -1,0 +1,41 @@
+library(plotly)
+
+dat2 <- bank_stmt %>% filter(!(category %in% c('Incoming', 'Cash withdrawal','Self Transfer')),
+                             !(is.na(transaction_yearmonth))) %>% 
+  group_by(transaction_yearmonth, category_major) %>% 
+  summarise(total_amount = sum(amount, na.rm = T)) %>% 
+  ungroup()
+
+m<-ggplot(dat2,aes(transaction_yearmonth, total_amount)) +geom_bar(position = 'stack', stat = 'identity',aes(fill = category_major)) + 
+  scale_colour_manual(values = 
+                        c('red',
+                               'blue',
+                               'green',
+                               'yellow',
+                               'violet',
+                               'deeppink2',
+                               'black',
+                               'salmon',
+                               'beige',
+                               'lightgrey',
+                               'purple',
+                               'darkgreen',
+                               'orange1',
+                               'lightblue',
+                               'brown',
+                               'yellow4',
+                               'pink',
+                               'darkgrey',
+                               'white',
+                               'lightgreen',
+                               'darkgoldenrod3',
+                               'cyan',
+                               'navy',
+                               'orange4',
+                               'purple3',
+                               'salmon',
+                               'green3',
+                               'red3'),aesthetics = c("colour", "fill"), breaks = waiver())
+
+m+plotly()
+                               

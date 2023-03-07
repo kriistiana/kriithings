@@ -1,0 +1,26 @@
+{
+    "id": "CF11806F",
+    "path": "~/GitHub/kriithings/budget/bank_stmt_classificator.R",
+    "project_path": "bank_stmt_classificator.R",
+    "type": "r_source",
+    "hash": "0",
+    "contents": "",
+    "dirty": false,
+    "created": 1672594219835.0,
+    "source_on_save": false,
+    "relative_order": 1,
+    "properties": {
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "445,38",
+        "scrollLine": "428"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1672612056,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1672612056924,
+    "read_only": false,
+    "read_only_alternatives": []
+}
