@@ -1,0 +1,39 @@
+"0","dim(invoices)"
+"1","[1]"
+"1"," 9321"
+"1","   21"
+"1","
+"
+"0","glimpse(invoices)"
+"1","Rows: 9,321"
+"1",""
+"1","
+"
+"1","Columns: 21"
+"1",""
+"1","
+"
+"1","$ invoice_id                    [3m[38;5;246m<chr>[39m[23m ""cf734ddd3a7331fa03622e45152a5d99018d7eea"", ""cea607655aa2f2b2a830e10845f4de775996d0ee"", ""8f8a3f32126d69adbf1c0f4880d…
+$ invoice_amount                [3m[38;5;246m<dbl>[39m[23m 11625.00, 11975.00, 16875.00, 16875.00, 30687.50, 21500.00, 26562.50, 13056.25, 15106.25, 11150.00, 7562.50, 10225.5…
+$ seller_is_public              [3m[38;5;246m<lgl>[39m[23m FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALS…
+$ seller_main_industry_code     [3m[38;5;246m<chr>[39m[23m ""5bab61eb53176449e25c2c82f172b82cb13ffb9d"", ""5bab61eb53176449e25c2c82f172b82cb13ffb9d"", ""5bab61eb53176449e25c2c82f17…
+$ seller_company_type           [3m[38;5;246m<chr>[39m[23m ""e8382524c550b426d32c02de508b211f9844a6bb"", ""e8382524c550b426d32c02de508b211f9844a6bb"", ""e8382524c550b426d32c02de508…
+$ seller_danish_pep             [3m[38;5;246m<lgl>[39m[23m FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALS…
+$ seller_risika_score           [3m[38;5;246m<dbl>[39m[23m 7, 7, 7, 7, 5, 5, 5, 0, 0, 0, 5, 4, 1, 7, 0, 7, 0, 0, 0, 5, 5, 4, 5, 5, 5, 4, 4, 4, 4, 0, 0, 0, 0, 0, 1, 4, 4, 1, 4,…
+$ payer_is_public               [3m[38;5;246m<chr>[39m[23m ""FALSE"", ""FALSE"", ""FALSE"", ""FALSE"", ""FALSE"", ""FALSE"", ""FALSE"", ""FALSE"", ""FALSE"", ""FALSE"", ""FALSE"", ""FALSE"", ""FALSE"",…
+$ payer_main_industry_code      [3m[38;5;246m<chr>[39m[23m ""5bab61eb53176449e25c2c82f172b82cb13ffb9d"", ""5bab61eb53176449e25c2c82f172b82cb13ffb9d"", ""5bab61eb53176449e25c2c82f17…
+$ payer_company_type            [3m[38;5;246m<chr>[39m[23m ""e8382524c550b426d32c02de508b211f9844a6bb"", ""e8382524c550b426d32c02de508b211f9844a6bb"", ""e8382524c550b426d32c02de508…
+$ payer_danish_pep              [3m[38;5;246m<lgl>[39m[23m FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALS…
+$ payer_eu_sanctions            [3m[38;5;246m<lgl>[39m[23m FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALS…
+$ payer_risika_score            [3m[38;5;246m<chr>[39m[23m ""6.0"", ""5.0"", ""5.0"", ""5.0"", ""5.0"", ""6.0"", ""6.0"", ""10.0"", ""10.0"", ""10.0"", ""8.0"", ""4.0"", ""9.0"", ""4.0"", ""8.0"", ""9.0"", ""…
+$ offer_cost_percent            [3m[38;5;246m<dbl>[39m[23m 4.67, 4.00, 4.67, 4.67, 4.67, 4.00, 4.00, 4.67, 4.67, 4.67, 4.01, 4.01, 4.00, 4.00, 4.00, 4.00, 4.00, 4.00, 4.01, 4.…
+$ offer_seller_is_first_invoice [3m[38;5;246m<chr>[39m[23m ""?"", ""?"", ""?"", ""?"", ""?"", ""?"", ""?"", ""?"", ""?"", ""?"", ""?"", ""?"", ""?"", ""?"", ""?"", ""?"", ""?"", ""?"", ""?"", ""?"", ""?"", ""?"", ""?"", ""…
+$ inv_iss2due                   [3m[38;5;246m<dbl>[39m[23m 4, 0, 4, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 20, 0, 0, 8, 0, 0, 8, 0…
+$ inv_iss2purch                 [3m[38;5;246m<dbl>[39m[23m 4, 0, 4, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0,…
+$ inv_due2today                 [3m[38;5;246m<dbl>[39m[23m 662, 662, 662, 662, 659, 648, 648, 637, 637, 637, 636, 634, 633, 633, 624, 624, 623, 620, 620, 619, 619, 619, 619, 6…
+$ seller_age                    [3m[38;5;246m<dbl>[39m[23m 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 1, 9, 1, 10, 3, 5, 3, 3, 3, 14, 5, 16, 5, 5, 5, 16, 16, 16, 16, 3, 2, 2, 3, 3, 4, 4, 4…
+$ payerr_age                    [3m[38;5;246m<chr>[39m[23m ""1.0"", ""1.0"", ""1.0"", ""1.0"", ""1.0"", ""1.0"", ""1.0"", ""1.0"", ""1.0"", ""1.0"", ""1.0"", ""15.0"", ""1.0"", ""11.0"", ""34.0"", ""2021.0""…
+$ defaulted                     [3m[38;5;246m<chr>[39m[23m ""n"", ""n"", ""n"", ""n"", ""n"", ""n"", ""n"", ""n"", ""n"", ""n"", ""y"", ""n"", ""n"", ""n"", ""n"", ""n"", ""n"", ""n"", ""n"", ""n"", ""n"", ""n"", ""n"", ""…"
+"1",""
+"1","
+"

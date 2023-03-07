@@ -1,0 +1,6 @@
+"0","infvalue <- create_infotables(data=invoices_clean, y=""response"", bins=10, parallel=FALSE)"
+"1","[1]"
+"1"," ""Variable invoice_issue_date was removed because it is a Date variable"""
+"1","
+"
+"0","infvalue$Summary"

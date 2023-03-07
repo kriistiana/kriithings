@@ -1,0 +1,115 @@
+"0","library(readxl) # excel import"
+"0","library(pillar) # glimpse"
+"0","library(ggplot2) # visualizations"
+"0","library(dplyr) # data wrangling"
+"2","
+Attaching package: ‘dplyr’
+
+"
+"2","The following object is masked from ‘package:pillar’:
+
+    dim_desc
+
+"
+"2","The following objects are masked from ‘package:stats’:
+
+    filter, lag
+
+"
+"2","The following objects are masked from ‘package:base’:
+
+    intersect, setdiff, setequal, union
+
+"
+"0","library(lubridate) # dates"
+"2","
+Attaching package: ‘lubridate’
+
+"
+"2","The following objects are masked from ‘package:base’:
+
+    date, intersect, setdiff, union
+
+"
+"0","library(rlang) # debugging"
+"0","library(Hmisc) # multi- histogram"
+"2","Loading required package: lattice
+"
+"2","Loading required package: survival
+"
+"2","Loading required package: Formula
+"
+"2","Registered S3 methods overwritten by 'htmltools':
+  method               from         
+  print.html           tools:rstudio
+  print.shiny.tag      tools:rstudio
+  print.shiny.tag.list tools:rstudio
+"
+"2","Registered S3 method overwritten by 'htmlwidgets':
+  method           from         
+  print.htmlwidget tools:rstudio
+"
+"2","
+Attaching package: ‘Hmisc’
+
+"
+"2","The following objects are masked from ‘package:dplyr’:
+
+    src, summarize
+
+"
+"2","The following objects are masked from ‘package:base’:
+
+    format.pval, units
+
+"
+"0","library(Information) # Information value"
+"0","library(xgboost) # XGB modelling"
+"2","
+Attaching package: ‘xgboost’
+
+"
+"2","The following object is masked from ‘package:dplyr’:
+
+    slice
+
+"
+"0","library(superml) # grid search"
+"2","Loading required package: R6
+"
+"0","library(Metrics) # auc"
+"2","
+Attaching package: ‘Metrics’
+
+"
+"2","The following object is masked from ‘package:rlang’:
+
+    ll
+
+"
+"0","invoices <- read_excel(""Moneyflow DS interview Case.xlsx"", "
+"0","                       sheet = ""Train"")"
+"2","Warning: Expecting logical in C4050 / R4050C3: got '?'"
+"2","Warning: Expecting numeric in S4050 / R4050C19: got '?'"
+"2","Warning: Expecting logical in C4052 / R4052C3: got '?'"
+"2","Warning: Expecting numeric in S4052 / R4052C19: got '?'"
+"2","Warning: Expecting logical in C4053 / R4053C3: got '?'"
+"2","Warning: Expecting numeric in S4053 / R4053C19: got '?'"
+"2","Warning: Expecting logical in C4061 / R4061C3: got '?'"
+"2","Warning: Expecting numeric in S4061 / R4061C19: got '?'"
+"2","Warning: Expecting logical in C4062 / R4062C3: got '?'"
+"2","Warning: Expecting numeric in S4062 / R4062C19: got '?'"
+"2","Warning: Expecting logical in C4184 / R4184C3: got '?'"
+"2","Warning: Expecting numeric in S4184 / R4184C19: got '?'"
+"2","Warning: Expecting logical in C4294 / R4294C3: got '?'"
+"2","Warning: Expecting numeric in S4294 / R4294C19: got '?'"
+"2","Warning: Expecting logical in C4295 / R4295C3: got '?'"
+"2","Warning: Expecting numeric in S4295 / R4295C19: got '?'"
+"2","Warning: Expecting logical in C4613 / R4613C3: got '?'"
+"2","Warning: Expecting numeric in S4613 / R4613C19: got '?'"
+"2","Warning: Expecting logical in C4614 / R4614C3: got '?'"
+"2","Warning: Expecting numeric in S4614 / R4614C19: got '?'"
+"2","Warning: Expecting logical in C4615 / R4615C3: got '?'"
+"2","Warning: Expecting numeric in S4615 / R4615C19: got '?'"
+"2","Warning: Expecting logical in C5894 / R5894C3: got '?'"
+"2","Warning: Expecting numeric in S5894 / R5894C19: got '?'"

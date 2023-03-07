@@ -1,3 +1,0 @@
-"0","```r
-qplot(invoices$payerr_age)
-```"

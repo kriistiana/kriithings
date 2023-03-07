@@ -1,5 +1,0 @@
-"0","```r
-qplot(invoices$inv_iss2purch)
-```"
-"1","`stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
-"

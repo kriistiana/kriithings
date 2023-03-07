@@ -1,0 +1,1 @@
+"0","qplot(invoices$invoice_amount[invoices$invoice_amount<100000])"

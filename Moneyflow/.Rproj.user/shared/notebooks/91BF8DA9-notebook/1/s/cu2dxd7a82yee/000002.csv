@@ -1,6 +1,0 @@
-"0","```r
-invoices_clean %>% 
-  group_by(invoice_issue_yearmonth) %>% 
-  summarise(nn = n(),
-            br = mean(response))
-```"
