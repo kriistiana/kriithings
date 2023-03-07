@@ -1,0 +1,26 @@
+{
+    "id": "B29A800C",
+    "path": "~/GitHub/kriithings/budget/bank_stmt_classificator.R",
+    "project_path": "bank_stmt_classificator.R",
+    "type": "r_source",
+    "hash": "3102832941",
+    "contents": "",
+    "dirty": false,
+    "created": 1678179973022.0,
+    "source_on_save": false,
+    "relative_order": 1,
+    "properties": {
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "622,0",
+        "scrollLine": "598"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1678211928,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1678211928240,
+    "read_only": false,
+    "read_only_alternatives": []
+}

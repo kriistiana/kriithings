@@ -1,0 +1,5 @@
+library(dplyr)
+
+dat <- read.csv("C:/Users/37129/Downloads/validacijudati02_2023/ValidDati01_02_23.txt")
+
+dat %>% filter(ValidTalonaId == 3076593) %>% View()
