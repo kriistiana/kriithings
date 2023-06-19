@@ -3,7 +3,7 @@
     "path": "~/GitHub/kriithings/budget/bank_stmt_classificator.R",
     "project_path": "bank_stmt_classificator.R",
     "type": "r_source",
-    "hash": "3102832941",
+    "hash": "0",
     "contents": "",
     "dirty": false,
     "created": 1678179973022.0,
@@ -12,8 +12,8 @@
     "properties": {
         "source_window_id": "",
         "Source": "Source",
-        "cursorPosition": "622,0",
-        "scrollLine": "598"
+        "cursorPosition": "0,0",
+        "scrollLine": "0"
     },
     "folds": "",
     "lastKnownWriteTime": 1678211928,

@@ -8,10 +8,28 @@ library(ggplot2)
 ui <- fluidPage(
   
   # checkboxGroupInput("timeframe", "Group by", c("transaction_month","transaction_week")),
+  titlePanel("Budget app"),
+  
+  sidebarLayout(
+    
+    sidebarPanel(
+      
+      sliderInput("datesrange", 
+                  "Dates:",
+                  min = min(bank_stmt$transaction_yearmonth),
+                  max = max(bank_stmt$transaction_yearmonth),
+                  value = c(as.Date("2021-06-01"),as.Date("2022-01-01")),
+                  timeFormat = "%Y-%m-%d"),
+      
+      checkboxGroupInput(inputId = "category_main",
+                  label = "Pick a Category:",
+                  choices = bank_stmt$category_main %>% unique())
+    ),
+    
+    mainPanel(
   
   plotOutput(outputId = "budget_overall", click = "plot_click"),
   
-  selectInput(inputId = 'category_main', "Category of choice", bank_stmt$category_main),
   plotOutput(outputId = "budget_category"),
   
   plotOutput(outputId = "budget_overall_categories"),
@@ -22,7 +40,7 @@ ui <- fluidPage(
                                                                   'Indulging Expenses',
                                                                   'Vacation')),
   plotOutput(outputId = "budget_category_major")
-  ) 
+  ))) 
 
 
 server <- function(input, output) {
@@ -73,7 +91,7 @@ server <- function(input, output) {
   
   dat <- reactive({bank_stmt[bank_stmt$category_main==input$category_main,] %>% 
       group_by(transaction_yearmonth) %>% 
-      summarise(total_amount = sum(amount))})
+      summarise(total_amount = round(sum(amount),0))})
   
   output$budget_category <- renderPlot(
     {
