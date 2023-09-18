@@ -6,6 +6,7 @@ library(stringr)
 library(ggplot2)
 
 library(readr)
+# this is a line from rstudio
 statement <- read_delim("Statement.csv", 
                         delim = "|", escape_double = FALSE, trim_ws = TRUE, 
                         skip = 2)
